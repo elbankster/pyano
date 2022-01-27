@@ -3,7 +3,7 @@ from pymongo import MongoClient
 from datetime import datetime
 from random import randint
 
-sessionChordCount - 0
+sessionChordCount = 0
 sessionAverageTime = 0
 
 keysPressed = []
