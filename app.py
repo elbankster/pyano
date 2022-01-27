@@ -3,6 +3,8 @@ from pymongo import MongoClient
 from datetime import datetime
 from random import randint
 
+
+
 sessionChordCount = 0
 sessionAverageTime = 0
 
@@ -441,6 +443,9 @@ def chordCheck(timestamp):
         if chordRoot == chordToGuess[0] and chordQuality == chordToGuess[1] and chordInversion == chordToGuess[2]:
 
             # add record to db
+            post = {"timestamp": datetime.now(), "username": "bbankster", "chordRoot": chordRoot, "chordQuality": chordQuality, "chordInversion": chordInversion, "time": round((timestamp - startTime) / 1000.0, 2)}
+            collection.insert_one(post)
+            
             print(f"Correct!")
 
             sessionChordCount += 1
@@ -448,19 +453,25 @@ def chordCheck(timestamp):
 
             chordToGuess = getRandomChord()
             startTime = timestamp
+
         else:
+
             print(f"You played a {chordRoot} {chordQuality} {chordInversion}. \nTry again!")
 
 
 def handleNoteOn(value, ts):
+
     keysPressed.append(value)
     keysPressed.sort()
 
     if len(keysPressed) >= 3:
         chordCheck(ts)
 
+
 def handleNoteOff(value):
+
     keysPressed.remove(value)
+
 
 def handleEvents(events):
 
@@ -474,24 +485,30 @@ def handleEvents(events):
         elif message == 128:
             handleNoteOff(value)
 
+
 midi.init()
 
 midiInput = None
 defaultId = midi.get_default_input_id()
 
-chordToGuess = getRandomChord()
-
 if defaultId != -1:
     midiInput = midi.Input(device_id=defaultId)
+
+    cluster = MongoClient("mongodb://localhost:27017/?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false")
+    db = cluster["pyano"]
+    collection = db["stats"]
+
+    chordToGuess = getRandomChord()
+
     startime = 0
 
-try:
-    while True:
-        if midiInput.poll():
-            handleEvents(midiInput.read(num_events=16))
+    try:
+        while True:
+            if midiInput.poll():
+                handleEvents(midiInput.read(num_events=16))
 
-except KeyboardInterrupt:
-    if sessionChordCount > 0:
-        print(f"You played {sessionChordCount} chords this session.")
-        print(f"On average, it took you {round(sessionAverageTime / sessionChordCount, 2)} seconds to find the chord after prompted.")
-        
+    except KeyboardInterrupt:
+        if sessionChordCount > 0:
+            print(f"You played {sessionChordCount} chords this session.")
+            print(f"On average, it took you {round(sessionAverageTime / sessionChordCount, 2)} seconds to find the chord after prompted.")
+            
