@@ -3,16 +3,14 @@ from pymongo import MongoClient
 from datetime import datetime
 from random import randint
 
+session_chord_count = 0
+session_average_time = 0
 
+keys_pressed = []
+start_time = 0
+chord_to_guess = []
 
-sessionChordCount = 0
-sessionAverageTime = 0
-
-keysPressed = []
-startTime = 0
-chordToGuess = []
-
-midiNoteNumberMap = (
+midi_note_number_map = (
     #0-11
     "C",
     "C#",
@@ -164,316 +162,316 @@ midiNoteNumberMap = (
     "G"
 )
 
-def getRandomChord():
-    chordPool = buildChordPool()
+def get_random_chord():
+    chord_pool = build_chord_pool()
 
-    rootNote = chordPool[0][randint(0,len(chordPool[0])-1)]
-    chordQuality = chordPool[1][randint(0,len(chordPool[1])-1)]
-    chordInversion = chordPool[2][randint(0,len(chordPool[2])-1)]
+    root_note = chord_pool[0][randint(0,len(chord_pool[0])-1)]
+    chord_quality = chord_pool[1][randint(0,len(chord_pool[1])-1)]
+    chord_inversion = chord_pool[2][randint(0,len(chord_pool[2])-1)]
 
-    print(f"{rootNote} {chordQuality} {chordInversion}")
-    return [rootNote, chordQuality, chordInversion]
+    print(f"{root_note} {chord_quality} {chord_inversion}")
+    return [root_note, chord_quality, chord_inversion]
 
-def buildChordPool():
-    rootNotes = []
-    chordQualities = []
-    chordInversions = []
+def build_chord_pool():
+    root_notes = []
+    chord_qualities = []
+    chord_inversions = []
 
-    includeNaturals = True
-    includeSharps = False
-    includeFlats = False
+    include_naturals = True
+    include_sharps = False
+    include_flats = False
     
-    includeMajor = True
-    includeMinor = False
-    includeDiminished = False
-    includeAugmented = False
-    includeMajor7th = False
-    includeMinor7th = False
-    includeDominant7th = False
-    includeHalfDiminished7th = False
+    include_major = True
+    include_minor = False
+    include_diminished = False
+    include_augmented = False
+    include_major7th = False
+    include_minor7th = False
+    include_dominant_7th = False
+    include_half_diminished_7th = False
 
-    includeRoot = True
-    include1stInversion = True
-    include2ndInversion = True
-    include3rdInversion = False
+    include_root = True
+    include_1st_inversion = True
+    include_2nd_inversion = True
+    include_3rd_inversion = False
 
-    if includeNaturals:
-        rootNotes.append("A")
-        rootNotes.append("B")
-        rootNotes.append("C")
-        rootNotes.append("D")
-        rootNotes.append("E")
-        rootNotes.append("F")
-        rootNotes.append("G")
+    if include_naturals:
+        root_notes.append("A")
+        root_notes.append("B")
+        root_notes.append("C")
+        root_notes.append("D")
+        root_notes.append("E")
+        root_notes.append("F")
+        root_notes.append("G")
 
-    if includeSharps:
-        rootNotes.append("A#")
-        rootNotes.append("C#")
-        rootNotes.append("D#")
-        rootNotes.append("F#")
-        rootNotes.append("G#")
+    if include_sharps:
+        root_notes.append("A#")
+        root_notes.append("C#")
+        root_notes.append("D#")
+        root_notes.append("F#")
+        root_notes.append("G#")
         
-    if includeFlats:
-        rootNotes.append("Ab")
-        rootNotes.append("Bb")
-        rootNotes.append("Db")
-        rootNotes.append("Eb")
-        rootNotes.append("Gb")
+    if include_flats:
+        root_notes.append("Ab")
+        root_notes.append("Bb")
+        root_notes.append("Db")
+        root_notes.append("Eb")
+        root_notes.append("Gb")
 
-    if includeMajor:
-        chordQualities.append("major")
+    if include_major:
+        chord_qualities.append("major")
 
-    if includeMinor:
-        chordQualities.append("minor")
+    if include_minor:
+        chord_qualities.append("minor")
     
-    if includeDiminished:
-        chordQualities.append("diminished")
+    if include_diminished:
+        chord_qualities.append("diminished")
 
-    if includeAugmented:
-        chordQualities.append("augmented")
+    if include_augmented:
+        chord_qualities.append("augmented")
 
-    if includeDominant7th:
-        chordQualities.append("dominant 7th")
+    if include_dominant_7th:
+        chord_qualities.append("dominant 7th")
     
-    if includeMajor7th:
-        chordQualities.append("major 7th")
+    if include_major7th:
+        chord_qualities.append("major 7th")
 
-    if includeMinor7th:
-        chordQualities.append("minor 7th")
+    if include_minor7th:
+        chord_qualities.append("minor 7th")
 
-    if includeHalfDiminished7th:
-        chordQualities.append("half-diminished 7th")
+    if include_half_diminished_7th:
+        chord_qualities.append("half-diminished 7th")
 
-    if includeRoot:
-        chordInversions.append("root")
+    if include_root:
+        chord_inversions.append("root")
 
-    if include1stInversion:
-        chordInversions.append("1st inversion")
+    if include_1st_inversion:
+        chord_inversions.append("1st inversion")
 
-    if include2ndInversion:
-        chordInversions.append("2nd inversion")
+    if include_2nd_inversion:
+        chord_inversions.append("2nd inversion")
 
-    if include3rdInversion:
-        chordInversions.append("3rd inversion")
+    if include_3rd_inversion:
+        chord_inversions.append("3rd inversion")
 
-    return [rootNotes, chordQualities, chordInversions]
+    return [root_notes, chord_qualities, chord_inversions]
 
-def getSemitonesFromKeysPressed():
-    semitones = keysPressed.copy()
+def get_semitones_from_keys_pressed():
+    semitones = keys_pressed.copy()
 
-    lowestNoteNumber = semitones[0]
+    lowest_note_number = semitones[0]
 
     for i in range(len(semitones)):
-        semitones[i] -= lowestNoteNumber
+        semitones[i] -= lowest_note_number
 
     return semitones
 
-def chordCheck(timestamp):
-    global startTime, chordToGuess, sessionChordCount, sessionAverageTime
+def chord_check(timestamp):
+    global start_time, chord_to_guess, session_chord_count, session_average_time
 
-    semitones = getSemitonesFromKeysPressed()
+    semitones = get_semitones_from_keys_pressed()
 
-    chordRoot = None
-    chordQuality = None
-    chordInversion = None
+    chord_check = None
+    chord_quality = None
+    chord_inversion = None
 
-    isQuadrad = False
-    isFlat = False
+    chord_is_quadrad = False
+    chord_is_flat = False
 
-    if "7th" in chordToGuess[1]:
-        isQuadrad = True
+    if "7th" in chord_to_guess[1]:
+        chord_is_quadrad = True
     
     ## MAJOR CHORD INTERVALS
-    if semitones == [0, 4, 7] and isQuadrad == False:
-        chordRoot = midiNoteNumberMap[keysPressed[0]]
-        chordQuality = "major"
-        chordInversion = "root"
+    if semitones == [0, 4, 7] and chord_is_quadrad == False:
+        chord_check = midi_note_number_map[keys_pressed[0]]
+        chord_quality = "major"
+        chord_inversion = "root"
 
-    elif semitones == [0, 5, 9] and isQuadrad == False:
-        chordRoot = midiNoteNumberMap[keysPressed[1]]
-        chordQuality = "major"
-        chordInversion = "1st inversion"
+    elif semitones == [0, 5, 9] and chord_is_quadrad == False:
+        chord_check = midi_note_number_map[keys_pressed[1]]
+        chord_quality = "major"
+        chord_inversion = "1st inversion"
     
-    elif semitones == [0, 3, 8] and isQuadrad == False:
-        chordRoot = midiNoteNumberMap[keysPressed[2]]
-        chordQuality = "major"
-        chordInversion = "2nd inversion"
+    elif semitones == [0, 3, 8] and chord_is_quadrad == False:
+        chord_check = midi_note_number_map[keys_pressed[2]]
+        chord_quality = "major"
+        chord_inversion = "2nd inversion"
 
     ## MINOR CHORD INTERVALS
-    elif semitones == [0, 3, 7] and isQuadrad == False:
-        chordRoot = midiNoteNumberMap[keysPressed[0]]
-        chordQuality = "minor"
-        chordInversion = "root"
+    elif semitones == [0, 3, 7] and chord_is_quadrad == False:
+        chord_check = midi_note_number_map[keys_pressed[0]]
+        chord_quality = "minor"
+        chord_inversion = "root"
 
-    elif semitones == [0, 5, 8] and isQuadrad == False:
-        chordRoot = midiNoteNumberMap[keysPressed[1]]
-        chordQuality = "minor"
-        chordInversion = "1st inversion"
+    elif semitones == [0, 5, 8] and chord_is_quadrad == False:
+        chord_check = midi_note_number_map[keys_pressed[1]]
+        chord_quality = "minor"
+        chord_inversion = "1st inversion"
     
-    elif semitones == [0, 4, 9] and isQuadrad == False:
-        chordRoot = midiNoteNumberMap[keysPressed[2]]
-        chordQuality = "minor"
-        chordInversion = "2nd inversion"
+    elif semitones == [0, 4, 9] and chord_is_quadrad == False:
+        chord_check = midi_note_number_map[keys_pressed[2]]
+        chord_quality = "minor"
+        chord_inversion = "2nd inversion"
 
     ## DIMINISHED CHORD INTERVALS
-    elif semitones == [0, 3, 6] and isQuadrad == False:
-        chordRoot = midiNoteNumberMap[keysPressed[0]]
-        chordQuality = "diminished"
-        chordInversion = "root"
+    elif semitones == [0, 3, 6] and chord_is_quadrad == False:
+        chord_check = midi_note_number_map[keys_pressed[0]]
+        chord_quality = "diminished"
+        chord_inversion = "root"
 
-    elif semitones == [0, 6, 9] and isQuadrad == False:
-        chordRoot = midiNoteNumberMap[keysPressed[1]]
-        chordQuality = "diminished"
-        chordInversion = "1st inversion"
+    elif semitones == [0, 6, 9] and chord_is_quadrad == False:
+        chord_check = midi_note_number_map[keys_pressed[1]]
+        chord_quality = "diminished"
+        chord_inversion = "1st inversion"
     
-    elif semitones == [0, 3, 9] and isQuadrad == False:
-        chordRoot = midiNoteNumberMap[keysPressed[2]]
-        chordQuality = "diminished"
-        chordInversion = "2nd inversion"
+    elif semitones == [0, 3, 9] and chord_is_quadrad == False:
+        chord_check = midi_note_number_map[keys_pressed[2]]
+        chord_quality = "diminished"
+        chord_inversion = "2nd inversion"
 
     ## AUGMENTD CHORD INTERVALS
-    elif semitones == [0, 4, 8] and isQuadrad == False:
-        chordRoot = midiNoteNumberMap[keysPressed[0]]
-        chordQuality = "augmented"
+    elif semitones == [0, 4, 8] and chord_is_quadrad == False:
+        chord_check = midi_note_number_map[keys_pressed[0]]
+        chord_quality = "augmented"
         # every augmented inversion == 0 4 8
 
     ## MAJOR 7TH CHORD INTERVALS
-    elif semitones == [0, 4, 7, 11] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[0]]
-        chordQuality = "major 7th"
-        chordInversion = "root"
+    elif semitones == [0, 4, 7, 11] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[0]]
+        chord_quality = "major 7th"
+        chord_inversion = "root"
 
-    elif semitones == [0, 3, 7, 8] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[3]]
-        chordQuality = "major 7th"
-        chordInversion = "1st inversion"
+    elif semitones == [0, 3, 7, 8] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[3]]
+        chord_quality = "major 7th"
+        chord_inversion = "1st inversion"
 
-    elif semitones == [0, 4, 5, 9] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[2]]
-        chordQuality = "major 7th"
-        chordInversion = "2nd inversion"
+    elif semitones == [0, 4, 5, 9] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[2]]
+        chord_quality = "major 7th"
+        chord_inversion = "2nd inversion"
 
-    elif semitones == [0, 1, 5, 8] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[1]]
-        chordQuality = "major 7th"
-        chordInversion = "3rd inversion"
+    elif semitones == [0, 1, 5, 8] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[1]]
+        chord_quality = "major 7th"
+        chord_inversion = "3rd inversion"
 
     ## MINOR 7TH CHORD INTERVALS
-    elif semitones == [0, 3, 7, 10] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[0]]
-        chordQuality = "minor 7th"
-        chordInversion = "root"
+    elif semitones == [0, 3, 7, 10] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[0]]
+        chord_quality = "minor 7th"
+        chord_inversion = "root"
 
-    elif semitones == [0, 4, 7, 9] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[3]]
-        chordQuality = "minor 7th"
-        chordInversion = "1st inversion"
+    elif semitones == [0, 4, 7, 9] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[3]]
+        chord_quality = "minor 7th"
+        chord_inversion = "1st inversion"
 
-    elif semitones == [0, 3, 5, 8] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[2]]
-        chordQuality = "minor 7th"
-        chordInversion = "2nd inversion"
+    elif semitones == [0, 3, 5, 8] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[2]]
+        chord_quality = "minor 7th"
+        chord_inversion = "2nd inversion"
 
-    elif semitones == [0, 2, 5, 9] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[1]]
-        chordQuality = "minor 7th"
-        chordInversion = "3rd inversion"
+    elif semitones == [0, 2, 5, 9] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[1]]
+        chord_quality = "minor 7th"
+        chord_inversion = "3rd inversion"
 
     ## DOMINANT SEVENTH CHORD INTERVALS
-    elif semitones == [0, 4, 7, 10] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[0]]
-        chordQuality = "dominant 7th"
-        chordInversion = "root"
+    elif semitones == [0, 4, 7, 10] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[0]]
+        chord_quality = "dominant 7th"
+        chord_inversion = "root"
 
-    elif semitones == [0, 3, 6, 8] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[3]]
-        chordQuality = "dominant 7th"
-        chordInversion = "1st inversion"
+    elif semitones == [0, 3, 6, 8] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[3]]
+        chord_quality = "dominant 7th"
+        chord_inversion = "1st inversion"
 
-    elif semitones == [0, 3, 5, 9] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[2]]
-        chordQuality = "dominant 7th"
-        chordInversion = "2nd inversion"
+    elif semitones == [0, 3, 5, 9] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[2]]
+        chord_quality = "dominant 7th"
+        chord_inversion = "2nd inversion"
 
-    elif semitones == [0, 2, 6, 9] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[1]]
-        chordQuality = "dominant 7th"
-        chordInversion = "3rd inversion"
+    elif semitones == [0, 2, 6, 9] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[1]]
+        chord_quality = "dominant 7th"
+        chord_inversion = "3rd inversion"
 
     ## HALF-DIMINISHED 7TH CHORD INTERVALS
-    elif semitones == [0, 3, 6, 10] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[0]]
-        chordQuality = "half-diminished 7th"
-        chordInversion = "root"
+    elif semitones == [0, 3, 6, 10] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[0]]
+        chord_quality = "half-diminished 7th"
+        chord_inversion = "root"
 
-    elif semitones == [0, 3, 7, 9] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[3]]
-        chordQuality = "half-diminished 7th"
-        chordInversion = "1st inversion"
+    elif semitones == [0, 3, 7, 9] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[3]]
+        chord_quality = "half-diminished 7th"
+        chord_inversion = "1st inversion"
 
-    elif semitones == [0, 4, 6, 9] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[2]]
-        chordQuality = "half-diminished 7th"
-        chordInversion = "2nd inversion"
+    elif semitones == [0, 4, 6, 9] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[2]]
+        chord_quality = "half-diminished 7th"
+        chord_inversion = "2nd inversion"
 
-    elif semitones == [0, 2, 5, 8] and isQuadrad == True:
-        chordRoot = midiNoteNumberMap[keysPressed[1]]
-        chordQuality = "half-diminished 7th"
-        chordInversion = "3rd inversion"
+    elif semitones == [0, 2, 5, 8] and chord_is_quadrad == True:
+        chord_check = midi_note_number_map[keys_pressed[1]]
+        chord_quality = "half-diminished 7th"
+        chord_inversion = "3rd inversion"
 
     ## DO DIMINISHED 7TH?
 
-    if chordRoot != None:
+    if chord_check != None:
         
-        ## handle flats
-        if "b" in chordToGuess[0]:
-            isFlat = True
+        # handle flats
+        if "b" in chord_to_guess[0]:
+            chord_is_flat = True
 
-            if chordRoot == "A#":
-                chordRoot = "Bb"
-            elif chordRoot == "C#":
-                chordRoot = "Db"
-            elif chordRoot == "D#":
-                chordRoot = "Eb"
-            elif chordRoot == "F#":
-                chordRoot = "Gb"
-            elif chordRoot == "G#":
-                chordRoot = "Ab"
+            if chord_check == "A#":
+                chord_check = "Bb"
+            elif chord_check == "C#":
+                chord_check = "Db"
+            elif chord_check == "D#":
+                chord_check = "Eb"
+            elif chord_check == "F#":
+                chord_check = "Gb"
+            elif chord_check == "G#":
+                chord_check = "Ab"
 
-        if chordRoot == chordToGuess[0] and chordQuality == chordToGuess[1] and chordInversion == chordToGuess[2]:
+        if chord_check == chord_to_guess[0] and chord_quality == chord_to_guess[1] and chord_inversion == chord_to_guess[2]:
 
             # add record to db
-            post = {"timestamp": datetime.now(), "username": "bbankster", "chordRoot": chordRoot, "chordQuality": chordQuality, "chordInversion": chordInversion, "time": round((timestamp - startTime) / 1000.0, 2)}
+            post = {"timestamp": datetime.now(), "username": "bbankster", "chord_check": chord_check, "chord_quality": chord_quality, "chord_inversion": chord_inversion, "time": round((timestamp - start_time) / 1000.0, 2)}
             collection.insert_one(post)
             
             print(f"Correct!")
 
-            sessionChordCount += 1
-            sessionAverageTime += round((timestamp - startTime) / 1000.0, 2)
+            session_chord_count += 1
+            session_average_time += round((timestamp - start_time) / 1000.0, 2)
 
-            chordToGuess = getRandomChord()
-            startTime = timestamp
+            chord_to_guess = get_random_chord()
+            start_time = timestamp
 
         else:
 
-            print(f"You played a {chordRoot} {chordQuality} {chordInversion}. \nTry again!")
+            print(f"You played a {chord_check} {chord_quality} {chord_inversion}. \nTry again!")
 
 
-def handleNoteOn(value, ts):
+def handle_note_on(value, ts):
 
-    keysPressed.append(value)
-    keysPressed.sort()
+    keys_pressed.append(value)
+    keys_pressed.sort()
 
-    if len(keysPressed) >= 3:
-        chordCheck(ts)
-
-
-def handleNoteOff(value):
-
-    keysPressed.remove(value)
+    if len(keys_pressed) >= 3:
+        chord_check(ts)
 
 
-def handleEvents(events):
+def handle_note_off(value):
+
+    keys_pressed.remove(value)
+
+
+def handle_events(events):
 
     for x in range(len(events)):
         message = events[x][0][0]
@@ -481,34 +479,34 @@ def handleEvents(events):
         ts = events[x][1]
 
         if message == 144:
-            handleNoteOn(value, ts)
+            handle_note_on(value, ts)
         elif message == 128:
-            handleNoteOff(value)
+            handle_note_off(value)
 
 
-midi.init()
+if __name__ == '__main__':
 
-midiInput = None
-defaultId = midi.get_default_input_id()
+    midi.init()
 
-if defaultId != -1:
-    midiInput = midi.Input(device_id=defaultId)
+    midi_input = None
+    default_id = midi.get_default_input_id()
 
-    cluster = MongoClient("mongodb://localhost:27017/?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false")
-    db = cluster["pyano"]
-    collection = db["stats"]
+    if default_id != -1:
+        midi_input = midi.Input(device_id=default_id)
 
-    chordToGuess = getRandomChord()
+        cluster = MongoClient("mongodb://localhost:27017/?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false")
+        db = cluster["pyano"]
+        collection = db["stats"]
 
-    startime = 0
+        chord_to_guess = get_random_chord()
 
-    try:
-        while True:
-            if midiInput.poll():
-                handleEvents(midiInput.read(num_events=16))
+        try:
+            while True:
+                if midi_input.poll():
+                    handle_events(midi_input.read(num_events=16))
 
-    except KeyboardInterrupt:
-        if sessionChordCount > 0:
-            print(f"You played {sessionChordCount} chords this session.")
-            print(f"On average, it took you {round(sessionAverageTime / sessionChordCount, 2)} seconds to find the chord after prompted.")
+        except KeyboardInterrupt:
+            if session_chord_count > 0:
+                print(f"You played {session_chord_count} chords this session.")
+                print(f"On average, it took you {round(session_average_time / session_chord_count, 2)} seconds to find the chord after prompted.")
             
