@@ -3,6 +3,10 @@ from pymongo import MongoClient
 from datetime import datetime
 from random import randint
 
+cluster = MongoClient("mongodb://localhost:27017/?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false")
+db = cluster["pyano"]
+collection = db["stats"]
+
 session_chord_count = 0
 session_average_time = 0
 
@@ -162,7 +166,9 @@ midi_note_number_map = (
     "G"
 )
 
+
 def get_random_chord():
+
     chord_pool = build_chord_pool()
 
     root_note = chord_pool[0][randint(0,len(chord_pool[0])-1)]
@@ -172,7 +178,9 @@ def get_random_chord():
     print(f"{root_note} {chord_quality} {chord_inversion}")
     return [root_note, chord_quality, chord_inversion]
 
+
 def build_chord_pool():
+
     root_notes = []
     chord_qualities = []
     chord_inversions = []
@@ -256,7 +264,9 @@ def build_chord_pool():
 
     return [root_notes, chord_qualities, chord_inversions]
 
+
 def get_semitones_from_keys_pressed():
+
     semitones = keys_pressed.copy()
 
     lowest_note_number = semitones[0]
@@ -266,7 +276,9 @@ def get_semitones_from_keys_pressed():
 
     return semitones
 
+
 def chord_check(timestamp):
+
     global start_time, chord_to_guess, session_chord_count, session_average_time
 
     semitones = get_semitones_from_keys_pressed()
@@ -483,8 +495,9 @@ def handle_events(events):
         elif message == 128:
             handle_note_off(value)
 
+
 def main():
-    global chord_to_guess, collection
+    global chord_to_guess
 
     midi.init()
 
@@ -492,11 +505,7 @@ def main():
     default_id = midi.get_default_input_id()
 
     if default_id != -1:
-        midi_input = midi.Input(device_id=default_id)
-
-        cluster = MongoClient("mongodb://localhost:27017/?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false")
-        db = cluster["pyano"]
-        collection = db["stats"]
+        midi_input = midi.Input(device_id = default_id)
 
         chord_to_guess = get_random_chord()
 
@@ -513,4 +522,6 @@ def main():
 
 if __name__ == '__main__':
 
+    #session = PracticeSession()
+    
     main()
