@@ -483,8 +483,8 @@ def handle_events(events):
         elif message == 128:
             handle_note_off(value)
 
-
-if __name__ == '__main__':
+def main():
+    global chord_to_guess, collection
 
     midi.init()
 
@@ -510,3 +510,7 @@ if __name__ == '__main__':
                 print(f"You played {session_chord_count} chords this session.")
                 print(f"On average, it took you {round(session_average_time / session_chord_count, 2)} seconds to find the chord after prompted.")
             
+
+if __name__ == '__main__':
+
+    main()
